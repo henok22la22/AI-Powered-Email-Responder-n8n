@@ -1,0 +1,287 @@
+{
+  "name": "RAG - Knowledge Base",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1T3ChV1Frh8_wCFMoQ6eDJ-zy6u6yTu_n",
+          "mode": "list",
+          "cachedResultName": "RAG - Knowledge-base ",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1T3ChV1Frh8_wCFMoQ6eDJ-zy6u6yTu_n"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -40
+      ],
+      "id": "5b5dca80-dbad-4229-9a78-18e6d6721100",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "IywZRCNk6NIIcd0S",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        -40
+      ],
+      "id": "e45e9dc1-606e-43b9-85d7-2753f0e8047c",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "IywZRCNk6NIIcd0S",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-based-customer-support",
+          "mode": "list",
+          "cachedResultName": "rag-based-customer-support"
+        },
+        "options": {
+          "pineconeNamespace": "Customer Support FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        120,
+        -40
+      ],
+      "id": "1a29dffb-6202-4856-807d-b7574ad5d724",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "A0dI679M6PIRxvAx",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        140
+      ],
+      "id": "9256be75-a0bf-4a3f-a276-a0743dc124e0",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "KljnMheTGQ5qXqzb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "File Name",
+                "value": "={{ $('Google Drive').item.json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        220,
+        140
+      ],
+      "id": "66f89c06-c929-4f18-a280-5f8e98c7e0c4",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        140,
+        300
+      ],
+      "id": "92cdda02-6131-4cee-805c-ed12ec067eff",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        440,
+        -40
+      ],
+      "id": "107c84ff-3a27-4427-b5a0-97b4e08ac491",
+      "name": "No Operation, do nothing",
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "content": "Creating and Updating Knowledge-base Vector Database for RAG Application     ",
+        "height": 720,
+        "width": 1180
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -520,
+        -240
+      ],
+      "id": "db3630a0-d60c-468f-8a67-6ddb8491df17",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "* Storage location for data record. e.g Googl drive, Dropbox, Amazon S3, Local Filesystem...\n* It will trigger when every time the new record is created in specific a folder.\n*  Retrieves the actual document for processing. ",
+        "height": 680,
+        "width": 520,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        -200
+      ],
+      "id": "c87fe060-2cac-4b0d-89d9-3408353b1b74",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "* Converts the file (PDF, DOCX, etc.) into raw text.\n* Makes the tex manageable for embedding.\n* Transforms text into a format Pinecone or other vector DB can understand.",
+        "height": 680,
+        "width": 600,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        40,
+        -200
+      ],
+      "id": "f6a36071-3620-473e-bc45-583ed2fe1da1",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0796b6dc-07c2-4ed8-a13b-fc9a84184b6f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e84d69d57fe6f992415babdeb0ef9149c8d266dbc1f28068ed65ad8aae68949e"
+  },
+  "id": "1Sxr7GJ7c3PkufLh",
+  "tags": []
+}

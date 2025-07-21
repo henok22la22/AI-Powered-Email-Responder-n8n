@@ -1,0 +1,322 @@
+{
+  "name": "RAG - Reply To",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -100
+      ],
+      "id": "013d9575-8277-489e-8077-4fd2754d3a4c",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "16KhiBaTOnoiRMmG",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.textPlain }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=  You are a helpful and professional customer support agent for BanuBot.  \n  Your job is to reply to customer emails regarding subscription plans, billing, trials, refunds, and account management.  \n  You have access to the company’s knowledge base stored in a vector database; always generate your replies based on the most relevant information retrieved from this knowledge base.\n\n  - Greet the customer politely by name (if available).\n  - Provide a concise and accurate answer, directly addressing the customer’s question.\n  - Reference or paraphrase only what is present in the official company policies.\n  - Avoid making assumptions or providing information not found in the knowledge base.\n  - If additional help or clarification is needed, encourage the customer to reply or contact support.\n  - Keep the tone friendly, clear, and aligned with the company’s values.\n\n  ### Output Format:\n  Return your reply as a JSON object with two separate fields:\n  - \"subject\": a brief, relevant subject line for the email response\n  - \"message\": the actual email message body\n\n  Example Output:\n  {\n    \"subject\": \"Your Subscription Upgrade Request\",\n    \"message\": \"Hello [Customer Name],\\n\\nThank you for reaching out. According to our policy, you can upgrade your subscription at any time via your Account Settings. The upgrade takes effect immediately and is pro-rated for the billing period. If you need further assistance, please let us know!\\n\\nBest regards,\\nThe [Company Name] Support Team\"\n  }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        120,
+        -100
+      ],
+      "id": "a35bf35b-e853-403e-a279-ea674ba86ac0",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        40
+      ],
+      "id": "7f33c7ac-87a5-4245-b0e9-97db3a36c528",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "KljnMheTGQ5qXqzb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        280
+      ],
+      "id": "8e6b5f12-3ccb-4986-a11d-9ad86b495d45",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "KljnMheTGQ5qXqzb",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n    \"subject\": \"Your Subscription Upgrade Request\",\n    \"message\": \"Hello [Customer Name],\\n\\nThank you for reaching out. According to our policy, you can upgrade your subscription at any time via your Account Settings. The upgrade takes effect immediately and is pro-rated for the billing period. If you need further assistance, please let us know!\\n\\nBest regards,\\nThe [Company Name] Support Team\"\n  }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        40
+      ],
+      "id": "38172a9a-f38d-454f-83e2-92961b6dafc8",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "fromEmail": "support@banubot.com",
+        "toEmail": "henokyeshitila22@gmail.com",
+        "subject": "=Re:{{ $json.output.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.output.message }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Email Trigger (IMAP)').item.json.metadata['message-id'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        600,
+        -100
+      ],
+      "id": "e000a788-912a-45f5-af6f-5f896f75fbad",
+      "name": "Send Email",
+      "webhookId": "c05a031d-2c53-424f-ba74-4882bbc04da7",
+      "credentials": {
+        "smtp": {
+          "id": "4YlV0CFx4tVGuh4D",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -100
+      ],
+      "id": "7733ab03-c591-4f65-9b15-283273bdf5bd",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "Company_Knowledge_Base",
+        "toolDescription": "Work with this Pinecone vector database in order to get information to reply for an email.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "rag-based-customer-support",
+          "mode": "list",
+          "cachedResultName": "rag-based-customer-support"
+        },
+        "options": {
+          "pineconeNamespace": "Customer Support FAQ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        160
+      ],
+      "id": "438ece1e-786e-4fd3-baa3-68f483570f80",
+      "name": "Pinecone Vector Store -  Knowledge  Base",
+      "credentials": {
+        "pineconeApi": {
+          "id": "A0dI679M6PIRxvAx",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "**Reply for an emails based on the knowledge-base**",
+        "height": 720,
+        "width": 1460
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -440,
+        -320
+      ],
+      "id": "6d2c3a5d-5813-4312-b159-8c4bc420070e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "* Configure an IMAP or mail server existing Gmail, Microsoft...\n* Get an Read an incoming email\n* Every time when new email arrives the trigger is executed \n ",
+        "height": 660,
+        "width": 460,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -260
+      ],
+      "id": "46da66d4-014f-483a-aafa-e23f354bea60",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "* Use external tools, like Pinecone, to enhance its reasoning or fetch relevant knowledge.\n* Pinecone is being used as a Database or knowledge base.\n\n ",
+        "height": 660,
+        "width": 460,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        -260
+      ],
+      "id": "51951086-c89f-4561-963c-3660faf11d5d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "* Email replayed for the customer \n ",
+        "height": 660,
+        "width": 460,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        540,
+        -260
+      ],
+      "id": "c03142be-0304-4250-889c-364cd44dbf55",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store -  Knowledge  Base",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store -  Knowledge  Base": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b2e7d484-e027-42d9-9329-d8ebc60aa12e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e84d69d57fe6f992415babdeb0ef9149c8d266dbc1f28068ed65ad8aae68949e"
+  },
+  "id": "Uzpc1mvCEuiHu8ZT",
+  "tags": []
+}
